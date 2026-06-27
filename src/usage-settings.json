@@ -1,0 +1,7 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "$HOME/.local/share/claude-code-account-switcher/capture-usage.zsh",
+    "padding": 0
+  }
+}
