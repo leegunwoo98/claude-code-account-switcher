@@ -4,6 +4,8 @@ Use multiple Claude Code subscriptions side by side on macOS while sharing the s
 
 The switcher stores one long-lived OAuth token per account in macOS Keychain and generates direct commands such as `claude-gmail` and `claude-naver`. It also provides an `fzf`-powered account manager for adding, launching, editing, refreshing, and removing accounts.
 
+![Claude Code Account Switcher terminal demo](assets/demo.gif)
+
 ## Why this exists
 
 Claude Code stores `/login` credentials in a shared macOS Keychain entry. Logging into another subscription therefore changes the account used by other CLI sessions. Claude Code does support one-year OAuth tokens through `claude setup-token`, but it prints them without saving them.

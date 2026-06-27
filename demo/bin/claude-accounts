@@ -1,0 +1,42 @@
+#!/bin/zsh
+
+set -e
+
+selected="$(printf '%b\n' \
+  '__add__\t+ Add subscription\tCreate a Keychain-backed Claude account' \
+  'gmail\tGmail Work\tconfigured\t5h 24% · 7d 41% used\tclaude-gmail' \
+  'naver\tNaver Work\tconfigured\t5h 76% · 7d 58% used\tclaude-naver' | \
+  fzf \
+    --prompt='Claude accounts > ' \
+    --header='Select an account to manage or launch' \
+    --height=60% \
+    --layout=reverse \
+    --border \
+    --no-multi \
+    --with-nth=2..)" || exit 0
+
+slug="${selected%%$'\t'*}"
+[[ "$slug" == "__add__" ]] && exit 0
+label="${selected#*$'\t'}"
+label="${label%%$'\t'*}"
+
+action="$(printf '%b\n' \
+  'launch\tLaunch\tStart Claude with this subscription' \
+  'edit\tEdit\tChange the display name or direct command' \
+  'refresh\tRefresh token\tGenerate and store a replacement token' \
+  'remove\tRemove\tDelete this subscription and its Keychain token' | \
+  fzf \
+    --prompt="${label} > " \
+    --header='Choose an action' \
+    --height=50% \
+    --layout=reverse \
+    --border \
+    --no-multi \
+    --with-nth=2..)" || exit 0
+
+[[ "${action%%$'\t'*}" == "launch" ]] || exit 0
+
+print -P "%F{green}Starting Claude with subscription: ${label}%f"
+sleep 0.4
+print -P "%F{blue}Welcome back to Claude Code%f"
+print -r -- "Resuming the latest conversation with claude-${slug}..."

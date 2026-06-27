@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 - 2026-06-27
+
+- Add a reproducible animated terminal showcase to the README.
+
 ## 0.1.0 - 2026-06-27
 
 - Add Keychain-backed Claude Code subscription profiles.

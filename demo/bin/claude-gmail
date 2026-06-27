@@ -1,0 +1,6 @@
+#!/bin/zsh
+
+print -P "%F{green}Starting Claude with subscription: Gmail Work%f"
+sleep 0.4
+print -P "%F{blue}Welcome back to Claude Code%f"
+print -r -- "Resuming the latest conversation..."
