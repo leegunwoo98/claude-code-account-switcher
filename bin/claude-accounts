@@ -1,0 +1,30 @@
+#!/bin/zsh
+
+emulate -L zsh
+set -u
+
+runtime_root="${CLAUDE_ACCOUNTS_RUNTIME:-__CLAUDE_ACCOUNTS_RUNTIME__}"
+export CLAUDE_ACCOUNTS_BIN_DIR="${CLAUDE_ACCOUNTS_BIN_DIR:-${0:A:h}}"
+export CLAUDE_ACCOUNTS_STANDALONE=1
+
+if [[ ! -r "$runtime_root/claude-accounts.zsh" ]]; then
+  print -u2 -r -- "Claude Code Account Switcher runtime not found: $runtime_root"
+  print -u2 -r -- "Reinstall from https://github.com/leegunwoo98/claude-code-account-switcher"
+  exit 1
+fi
+
+source "$runtime_root/claude-accounts.zsh"
+
+invocation="${0:t}"
+if [[ "$invocation" == "claude-accounts" ]]; then
+  if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    print -r -- "usage: claude-accounts"
+    print -r -- ""
+    print -r -- "Manage and launch Keychain-backed Claude Code subscription profiles."
+    print -r -- "Configured profiles also create direct claude-<suffix> commands."
+    exit 0
+  fi
+  claude-accounts "$@"
+else
+  _claude_subscription_run "${invocation#claude-}" "$@"
+fi

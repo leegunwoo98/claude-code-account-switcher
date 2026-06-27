@@ -6,6 +6,7 @@ typeset -g CLAUDE_SUBSCRIPTIONS_DIR="${CLAUDE_SUBSCRIPTIONS_DIR:-${XDG_CONFIG_HO
 typeset -g CLAUDE_SUBSCRIPTIONS_FILE="${CLAUDE_SUBSCRIPTIONS_FILE:-$CLAUDE_SUBSCRIPTIONS_DIR/accounts.tsv}"
 typeset -g CLAUDE_SUBSCRIPTIONS_USAGE_DIR="${CLAUDE_SUBSCRIPTIONS_USAGE_DIR:-$CLAUDE_SUBSCRIPTIONS_DIR/usage}"
 typeset -g CLAUDE_SUBSCRIPTIONS_USAGE_SETTINGS="${CLAUDE_SUBSCRIPTIONS_USAGE_SETTINGS:-$CLAUDE_SUBSCRIPTIONS_DIR/usage-settings.json}"
+typeset -g CLAUDE_ACCOUNTS_BIN_DIR="${CLAUDE_ACCOUNTS_BIN_DIR:-}"
 
 if (( ${+_CLAUDE_SUBSCRIPTION_GENERATED_COMMANDS} )); then
   for _claude_stale_command in "${_CLAUDE_SUBSCRIPTION_GENERATED_COMMANDS[@]}"; do
@@ -67,14 +68,53 @@ _claude_subscription_usage_summary() {
 _claude_subscription_register_command() {
   local slug="$1"
   local command_name="claude-${slug}"
+  local command_path="${commands[$command_name]-}"
+  local managed_path="${CLAUDE_ACCOUNTS_BIN_DIR:+$CLAUDE_ACCOUNTS_BIN_DIR/$command_name}"
 
-  if (( ${+functions[$command_name]} || ${+aliases[$command_name]} || ${+commands[$command_name]} )); then
+  _claude_subscription_sync_executable "$slug"
+  [[ "${CLAUDE_ACCOUNTS_STANDALONE:-0}" == "1" ]] && return 0
+
+  command_path="${commands[$command_name]-}"
+  if (( ${+functions[$command_name]} || ${+aliases[$command_name]} )) || \
+    [[ -n "$command_path" && "$command_path" != "$managed_path" ]]; then
     print -u2 -r -- "Skipping generated command ${command_name}: that name is already in use."
-    return 1
+    return 0
   fi
 
   eval "${command_name}() { _claude_subscription_run ${(q)slug} \"\$@\"; }"
   _CLAUDE_SUBSCRIPTION_GENERATED_COMMANDS+=("$command_name")
+}
+
+_claude_subscription_sync_executable() {
+  local slug="$1"
+  local launcher link target
+
+  [[ -n "$CLAUDE_ACCOUNTS_BIN_DIR" ]] || return 0
+  launcher="$CLAUDE_ACCOUNTS_BIN_DIR/claude-accounts"
+  link="$CLAUDE_ACCOUNTS_BIN_DIR/claude-${slug}"
+  [[ -x "$launcher" ]] || return 0
+
+  if [[ -L "$link" ]]; then
+    target="$(readlink "$link" 2>/dev/null || true)"
+    [[ "$target" == "claude-accounts" ]] && return 0
+  fi
+  if [[ -e "$link" || -L "$link" ]]; then
+    print -u2 -r -- "Skipping executable ${link}: that path is already in use."
+    return 1
+  fi
+
+  ln -s "claude-accounts" "$link"
+}
+
+_claude_subscription_remove_executable() {
+  local slug="$1"
+  local link target
+
+  [[ -n "$CLAUDE_ACCOUNTS_BIN_DIR" ]] || return 0
+  link="$CLAUDE_ACCOUNTS_BIN_DIR/claude-${slug}"
+  [[ -L "$link" ]] || return 0
+  target="$(readlink "$link" 2>/dev/null || true)"
+  [[ "$target" == "claude-accounts" ]] && rm -f "$link"
 }
 
 _claude_subscriptions_reload() {
@@ -374,6 +414,7 @@ _claude_subscription_remove() {
   [[ "$answer" == [yY] ]] || return 1
 
   /usr/bin/security delete-generic-password -a "$USER" -s "$service" >/dev/null 2>&1
+  _claude_subscription_remove_executable "$slug"
 
   tmp="${CLAUDE_SUBSCRIPTIONS_FILE}.tmp.$$"
   : > "$tmp" || return 1
@@ -426,6 +467,7 @@ _claude_subscription_edit() {
       print -u2 -r -- "Command name is already in use: ${command_name}"
       return 1
     fi
+    _claude_subscription_remove_executable "$slug"
   fi
 
   tmp="${CLAUDE_SUBSCRIPTIONS_FILE}.tmp.$$"

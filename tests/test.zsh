@@ -15,18 +15,23 @@ fail() {
 export HOME="$TEST_ROOT/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 mkdir -p "$HOME" "$XDG_CONFIG_HOME/claude-subscriptions/usage"
+mkdir -p "$HOME/bin"
 
 export CLAUDE_SUBSCRIPTIONS_FILE="$XDG_CONFIG_HOME/claude-subscriptions/accounts.tsv"
 export CLAUDE_SUBSCRIPTIONS_USAGE_DIR="$XDG_CONFIG_HOME/claude-subscriptions/usage"
 export CLAUDE_SUBSCRIPTIONS_USAGE_SETTINGS="$XDG_CONFIG_HOME/claude-subscriptions/usage-settings.json"
+export CLAUDE_ACCOUNTS_BIN_DIR="$HOME/bin"
 
 print -r -- $'gmail\tGmail Work\tClaude Code Subscription: gmail' > "$CLAUDE_SUBSCRIPTIONS_FILE"
+print -r -- '#!/bin/sh' > "$CLAUDE_ACCOUNTS_BIN_DIR/claude-accounts"
+chmod 700 "$CLAUDE_ACCOUNTS_BIN_DIR/claude-accounts"
 print -r -- '{"captured_at":1782540000,"rate_limits":{"five_hour":{"used_percentage":23.5},"seven_day":{"used_percentage":41.2}}}' > "$CLAUDE_SUBSCRIPTIONS_USAGE_DIR/gmail.json"
 
 source "$PROJECT_ROOT/src/claude-accounts.zsh"
 
 typeset -f claude-accounts >/dev/null || fail "claude-accounts function was not loaded"
 typeset -f claude-gmail >/dev/null || fail "claude-gmail function was not generated"
+[[ -L "$CLAUDE_ACCOUNTS_BIN_DIR/claude-gmail" ]] || fail "claude-gmail executable was not generated"
 
 if typeset -f claude-claude-gmail >/dev/null; then
   print -u2 -r -- "unexpected duplicate claude- prefix"

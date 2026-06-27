@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 - 2026-06-27
+
+- Install real `claude-accounts` and `claude-<suffix>` executables on `PATH`.
+- Stop modifying shell startup files during installation.
+
 ## 0.1.1 - 2026-06-27
 
 - Add a reproducible animated terminal showcase to the README.

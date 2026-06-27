@@ -41,18 +41,20 @@ Then install:
 curl -fsSL https://raw.githubusercontent.com/leegunwoo98/claude-code-account-switcher/main/install.zsh | zsh
 ```
 
-Start a new shell, or reload immediately:
-
-```zsh
-source ~/.local/share/claude-code-account-switcher/claude-accounts.zsh
-```
-
 The installer:
 
 1. Places the runtime under `~/.local/share/claude-code-account-switcher/`.
 2. Places non-secret account metadata and usage cache under `~/.config/claude-subscriptions/`.
-3. Adds one marked `source` block to `~/.zshrc`.
-4. Never reads, exports, uploads, or commits existing Keychain tokens.
+3. Installs `claude-accounts` into an existing writable directory already on `PATH`.
+4. Generates external `claude-<suffix>` commands as accounts are added.
+5. Does not modify `.zshrc`, `.bashrc`, or other shell startup files.
+6. Never reads, exports, uploads, or commits existing Keychain tokens.
+
+The command is available immediately after installation from Zsh, Bash, Fish, Ghostty, or any other terminal shell:
+
+```zsh
+claude-accounts
+```
 
 ## Usage
 
@@ -110,7 +112,8 @@ New accounts show `usage pending` until their first normal Claude response. Cach
 
 | Path | Purpose |
 | --- | --- |
-| `~/.local/share/claude-code-account-switcher/` | Installed scripts |
+| A writable directory on `PATH` | `claude-accounts` and generated `claude-<suffix>` executables |
+| `~/.local/share/claude-code-account-switcher/` | Runtime scripts |
 | `~/.config/claude-subscriptions/accounts.tsv` | Display names, command suffixes, and Keychain service names; no tokens |
 | `~/.config/claude-subscriptions/usage/` | Cached rate-limit percentages |
 | macOS Keychain | OAuth tokens |

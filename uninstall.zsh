@@ -9,6 +9,11 @@ readonly ZSHRC="${ZDOTDIR:-$HOME}/.zshrc"
 readonly MARKER_START="# >>> claude-code-account-switcher >>>"
 readonly MARKER_END="# <<< claude-code-account-switcher <<<"
 
+if [[ -r "$INSTALL_ROOT/install.env" ]]; then
+  source "$INSTALL_ROOT/install.env"
+fi
+readonly BIN_DIR="${CLAUDE_ACCOUNTS_BIN_DIR:-}"
+
 purge=false
 assume_yes=false
 
@@ -39,6 +44,16 @@ if [[ -f "$ZSHRC" ]] && grep -Fq "$MARKER_START" "$ZSHRC"; then
   mv "$temp_zshrc" "$ZSHRC"
 fi
 
+registry="$CONFIG_ROOT/accounts.tsv"
+if [[ -n "$BIN_DIR" && -r "$registry" ]]; then
+  while IFS=$'\t' read -r slug label service extra; do
+    link="$BIN_DIR/claude-${slug}"
+    if [[ -L "$link" && "$(readlink "$link" 2>/dev/null || true)" == "claude-accounts" ]]; then
+      rm -f "$link"
+    fi
+  done < "$registry"
+fi
+[[ -n "$BIN_DIR" ]] && rm -f "$BIN_DIR/claude-accounts"
 rm -rf "$INSTALL_ROOT"
 
 if $purge; then
@@ -51,7 +66,6 @@ if $purge; then
     }
   fi
 
-  registry="$CONFIG_ROOT/accounts.tsv"
   if [[ -r "$registry" ]]; then
     while IFS=$'\t' read -r slug label service extra; do
       [[ -n "$service" ]] || continue
