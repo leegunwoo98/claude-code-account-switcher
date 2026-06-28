@@ -65,6 +65,19 @@ _claude_subscription_usage_summary() {
   REPLY="$REPLY used"
 }
 
+_claude_subscription_has_explicit_session_name() {
+  local argument
+
+  for argument in "$@"; do
+    [[ "$argument" == "--" ]] && return 1
+    case "$argument" in
+      --name|--name=*|-n|-n?*) return 0 ;;
+    esac
+  done
+
+  return 1
+}
+
 _claude_subscription_register_command() {
   local slug="$1"
   local command_name="claude-${slug}"
@@ -214,8 +227,12 @@ _claude_with_subscription() {
 
   local token claude_bin exit_code
   local -a usage_settings_args=()
+  local -a session_name_args=()
   claude_bin="${commands[claude]:-$HOME/.local/bin/claude}"
   [[ -r "$CLAUDE_SUBSCRIPTIONS_USAGE_SETTINGS" ]] && usage_settings_args=(--settings "$CLAUDE_SUBSCRIPTIONS_USAGE_SETTINGS")
+  if ! _claude_subscription_has_explicit_session_name "$@"; then
+    session_name_args=(--name "$label")
+  fi
 
   token="$(/usr/bin/security find-generic-password \
     -a "$USER" \
@@ -238,7 +255,7 @@ _claude_with_subscription() {
     CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1 \
     CLAUDE_CODE_OAUTH_TOKEN="$token" \
     CLAUDE_SUBSCRIPTION_SLUG="$slug" \
-    "$claude_bin" "${usage_settings_args[@]}" "$@"
+    "$claude_bin" "${usage_settings_args[@]}" "${session_name_args[@]}" "$@"
   exit_code=$?
 
   token=""

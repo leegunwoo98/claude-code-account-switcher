@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 - 2026-06-28
+
+- Show the selected profile name in Claude's session header, terminal title,
+  and resume picker by default.
+
 ## 0.2.0 - 2026-06-27
 
 - Install real `claude-accounts` and `claude-<suffix>` executables on `PATH`.

@@ -16,6 +16,7 @@ export HOME="$TEST_ROOT/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 mkdir -p "$HOME" "$XDG_CONFIG_HOME/claude-subscriptions/usage"
 mkdir -p "$HOME/bin"
+export PATH="$HOME/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 export CLAUDE_SUBSCRIPTIONS_FILE="$XDG_CONFIG_HOME/claude-subscriptions/accounts.tsv"
 export CLAUDE_SUBSCRIPTIONS_USAGE_DIR="$XDG_CONFIG_HOME/claude-subscriptions/usage"
@@ -43,5 +44,18 @@ _claude_subscription_suggest_slug "claude-naver"
 
 _claude_subscription_usage_summary "gmail"
 [[ "$REPLY" == "5h 24% · 7d 41% used" ]] || fail "usage summary was not formatted correctly"
+
+if _claude_subscription_has_explicit_session_name --continue; then
+  fail "unnamed sessions should receive the account name"
+fi
+_claude_subscription_has_explicit_session_name --name "review" || \
+  fail "--name was not detected"
+_claude_subscription_has_explicit_session_name --name=review || \
+  fail "--name=value was not detected"
+_claude_subscription_has_explicit_session_name -n "review" || \
+  fail "-n was not detected"
+if _claude_subscription_has_explicit_session_name -- --name "prompt text"; then
+  fail "arguments after -- should not be parsed as session options"
+fi
 
 print -r -- "runtime tests passed"

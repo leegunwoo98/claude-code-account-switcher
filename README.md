@@ -86,6 +86,12 @@ claude-naver --model opus
 claude-gmail "Review this repository"
 ```
 
+Each launcher also gives the Claude session its profile display name by default.
+The name appears in Claude's prompt header, terminal title, and resume picker.
+Claude's OAuth status does not expose the account email, so use **Edit** in
+`claude-accounts` to set the display name to an email when that is the clearest
+identifier. Pass `--name` or `-n` to use a custom session name instead.
+
 ## Usage percentages
 
 Claude Code exposes subscription rate-limit data to status-line commands after a successful API response. Wrapper-launched sessions cache those values locally without making extra requests.
