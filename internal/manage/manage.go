@@ -99,6 +99,81 @@ func Remove(slug string) error {
 	return nil
 }
 
+// Edit changes a subscription's display name and/or command suffix. Renaming the
+// suffix moves the token to the new Keychain service and the cached usage; the
+// stale claude-<slug> command is pruned by the manager's command sync.
+func Edit(slug string) error {
+	acct, ok := registry.Find(slug)
+	if !ok {
+		return fmt.Errorf("unknown subscription: %s", slug)
+	}
+	in := bufio.NewReader(os.Stdin)
+
+	name, err := promptLine(in, fmt.Sprintf("Display name [%s]: ", acct.Label))
+	if err != nil {
+		return err
+	}
+	if name == "" {
+		name = acct.Label
+	}
+	if strings.ContainsAny(name, "\t\n") {
+		return errors.New("display name must be free of tabs and newlines")
+	}
+
+	newSlug, err := promptLine(in, fmt.Sprintf("Command suffix, without claude- [%s]: ", acct.Slug))
+	if err != nil {
+		return err
+	}
+	if newSlug == "" {
+		newSlug = acct.Slug
+	}
+	newSlug = strings.TrimPrefix(newSlug, "claude-")
+	if !registry.ValidSlug(newSlug) {
+		return errors.New("suffix must use lowercase letters, numbers, and internal hyphens only")
+	}
+
+	if newSlug == acct.Slug {
+		if name == acct.Label {
+			fmt.Println("No changes.")
+			return nil
+		}
+		return rewrite(acct.Slug, registry.Account{Slug: acct.Slug, Label: name, Service: acct.Service})
+	}
+
+	if _, exists := registry.Find(newSlug); exists {
+		return fmt.Errorf("subscription %q already exists", newSlug)
+	}
+	newService := registry.ServiceFor(newSlug)
+	if token, _ := credstore.Get(acct.Service); token != "" {
+		if err := credstore.Set(newService, token); err != nil {
+			return fmt.Errorf("move token: %w", err)
+		}
+		_ = credstore.Delete(acct.Service)
+	}
+	if err := rewrite(acct.Slug, registry.Account{Slug: newSlug, Label: name, Service: newService}); err != nil {
+		return err
+	}
+	_ = os.Rename(
+		filepath.Join(paths.UsageDir(), acct.Slug+".json"),
+		filepath.Join(paths.UsageDir(), newSlug+".json"),
+	)
+	fmt.Printf("Updated %s. Launch with: claude-%s\n", name, newSlug)
+	return nil
+}
+
+func rewrite(oldSlug string, a registry.Account) error {
+	if err := registry.Remove(oldSlug); err != nil {
+		return err
+	}
+	if err := registry.Append(a); err != nil {
+		return err
+	}
+	if a.Slug == oldSlug {
+		fmt.Printf("Updated %s.\n", a.Label)
+	}
+	return nil
+}
+
 // setupToken runs `claude setup-token` (with competing auth scrubbed so it uses
 // the browser, not an injected token) and reads back the pasted token.
 func setupToken(in *bufio.Reader, label string) (string, error) {

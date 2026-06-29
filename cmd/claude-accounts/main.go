@@ -12,6 +12,7 @@ import (
 	"github.com/leegunwoo98/claude-code-account-switcher/internal/doctor"
 	"github.com/leegunwoo98/claude-code-account-switcher/internal/launcher"
 	"github.com/leegunwoo98/claude-code-account-switcher/internal/manage"
+	"github.com/leegunwoo98/claude-code-account-switcher/internal/manager"
 	"github.com/leegunwoo98/claude-code-account-switcher/internal/registry"
 	"github.com/leegunwoo98/claude-code-account-switcher/internal/usage"
 )
@@ -65,8 +66,10 @@ func main() {
 		return
 	}
 
-	// No subcommand: list. (The interactive manager is a later milestone.)
-	list()
+	// No subcommand: open the interactive manager.
+	if err := manager.Run(); err != nil {
+		fail(err)
+	}
 }
 
 func launch(slug string, args []string) {
