@@ -49,7 +49,7 @@ func mirror(base, acctDir string) error {
 			want[name] = true
 			link := filepath.Join(acctDir, name)
 			_ = os.Remove(link)
-			if err := os.Symlink(filepath.Join(base, name), link); err != nil {
+			if err := linkEntry(filepath.Join(base, name), link, e.IsDir()); err != nil {
 				return err
 			}
 		}
